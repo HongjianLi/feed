@@ -1,0 +1,80 @@
+﻿<!doctype html>
+<html lang="zh">
+<head>
+	<meta charset="utf-8">
+	<title>feed reader</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css" integrity="sha256-qK2XNHPC0d04vpmQHEb050dDEerz1tPtEEZiwzH9PFA=" crossorigin="anonymous">
+	<style>
+	</style>
+</head>
+<body>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-6 vh-100" style="overflow-y: scroll;">
+				<table class="table table-dark table-hover">
+					<tbody id="menu">
+					</tbody>
+				</table>
+			</div>
+			<div class="col-6 vh-100" style="overflow-y: scroll;">
+				<div id="desc"></div>
+			</div>
+		</div>
+	</div>
+	<script type="module">
+const menu = document.querySelector('tbody#menu');
+const desc = document.querySelector('div#desc');
+let itemArr, itemIndex = 0;
+function showItem(itemIndexToShow) {
+	menu.children[itemIndex].classList.remove('table-primary');
+	itemIndex = itemIndexToShow;
+	itemIndex = Math.min(itemIndex, itemArr.length - 1);
+	itemIndex = Math.max(itemIndex, 0);
+	menu.children[itemIndex].classList.add('table-primary');
+	const item = itemArr[itemIndex];
+	desc.innerHTML = `${item.pubDate} &nbsp; ${item.category} &nbsp; ${item.title}<br><br>${item.description}`;
+	desc.scrollIntoView({ behavior: 'instant' });
+}
+menu.addEventListener('click', (e) => {
+	showItem(e.target.parentNode.rowIndex);
+});
+document.addEventListener('DOMContentLoaded', () => {
+	fetch('http://localhost:12080').then(response => response.text()).then(text => {
+		const lines = text.split('\n').slice(17, -3);
+		console.assert(lines[0] === '\t\t<item>');
+		console.assert(lines[lines.length - 1] === '\t\t</item>');
+		itemArr = [...Array(lines.length / 10).keys()].map(index => {
+			const offset = 10 * index;
+			return {
+				index,
+				title: lines[offset + 1].slice(19, -11), // Filter out \t\t\t<title><![CDATA[ and ]]></title>
+				category: lines[offset + 5].slice(22, -14), // Filter out <category><![CDATA[ and ]]></category>
+				pubDate: lines[offset + 6].slice(12, -10), // Filter out \t\t\t<pubDate> and </pubDate>
+				description: lines[offset + 8].slice(25, -17), // <description><![CDATA[ and ]]></description>
+			};
+		});
+		for (const item of itemArr) {
+			const tr = document.createElement('tr');
+			['pubDate', 'category', 'title'].forEach(key => {
+				const td = document.createElement('td');
+				td.innerText = item[key];
+				tr.appendChild(td);
+			});
+			menu.appendChild(tr);
+		}
+		showItem(0);
+	});
+});
+document.addEventListener('keydown', (e) => {
+	switch (e.key) {
+		case 'ArrowLeft':
+			showItem(itemIndex - 1);
+			break;
+		case 'ArrowRight':
+			showItem(itemIndex + 1);
+			break;
+	}
+});
+	</script>
+</body>
+</html>
