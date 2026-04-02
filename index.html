@@ -38,6 +38,19 @@ function showItem(itemIndexToShow) {
 menu.addEventListener('click', (e) => {
 	showItem(e.target.parentNode.rowIndex);
 });
+menu.addEventListener('dblclick', (e) => {
+	const item = itemArr[e.target.parentNode.rowIndex];
+	fetch('.', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(item),
+	}).then(response => {
+		console.assert(response.ok);
+		response.text().then(alert);
+	});
+});
 document.addEventListener('DOMContentLoaded', () => {
 	fetch('http://localhost:12080').then(response => response.text()).then(text => {
 		const lines = text.split('\n').slice(17, -3);
