@@ -38,48 +38,49 @@ function showItem(itemIndexToShow) {
 menu.addEventListener('click', (e) => {
 	showItem(e.target.parentNode.rowIndex);
 });
-menu.addEventListener('dblclick', (e) => {
+menu.addEventListener('dblclick', async (e) => {
 	const item = itemArr[e.target.parentNode.rowIndex];
-	fetch('.', {
+	const response = await fetch('.', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify(item),
-	}).then(response => {
-		console.assert(response.ok);
-		response.text().then(alert);
 	});
+	console.assert(response.ok);
+	const text = await response.text();
+	alert(text);
 });
-document.addEventListener('DOMContentLoaded', () => {
-	fetch('http://localhost:12080').then(response => response.text()).then(text => {
-		const lines = text.split('\n').slice(17, -3);
-		console.assert(lines[0] === '\t\t<item>');
-		console.assert(lines[lines.length - 1] === '\t\t</item>');
-		for (let itemBegIndex = 0, itemEndIndex; itemBegIndex < lines.length; itemBegIndex = itemEndIndex + 1) {
-			for (itemEndIndex = itemBegIndex + 9; lines[itemEndIndex] !== '\t\t</item>';  ++itemEndIndex);
-			itemArr.push({
-				title: lines[itemBegIndex + 1].slice(19, -11), // Filter out \t\t\t<title><![CDATA[ and ]]></title>
-				category: lines[itemBegIndex + 5].slice(22, -14), // Filter out <category><![CDATA[ and ]]></category>
-				pubDate: lines[itemBegIndex + 6].slice(12, -10), // Filter out \t\t\t<pubDate> and </pubDate>
-				description: itemEndIndex === itemBegIndex + 9 ? lines[itemBegIndex + 8].slice(25, -17) : [ // The <description> tag can span multiple lines.
-					lines[itemBegIndex + 8].slice(25), // Filter out \t\t\t<description><![CDATA[
-					...lines.slice(itemBegIndex + 9, itemEndIndex - 1),
-					lines[itemEndIndex - 1].slice(0, -17), // Filter out ]]></description>
-				].join(''),
-			});
-		}
-		for (const item of itemArr) {
-			const tr = document.createElement('tr');
-			['pubDate', 'category', 'title'].forEach(key => {
-				const td = document.createElement('td');
-				td.innerText = item[key];
-				tr.appendChild(td);
-			});
-			menu.appendChild(tr);
-		}
-		showItem(0);
-	});
+document.addEventListener('DOMContentLoaded', async () => {
+	const response = await fetch('http://localhost:12080');
+	console.assert(response.ok);
+	const text = await response.text();
+	const lines = text.split('\n').slice(17, -3);
+	console.assert(lines[0] === '\t\t<item>');
+	console.assert(lines[lines.length - 1] === '\t\t</item>');
+	for (let itemBegIndex = 0, itemEndIndex; itemBegIndex < lines.length; itemBegIndex = itemEndIndex + 1) {
+		for (itemEndIndex = itemBegIndex + 9; lines[itemEndIndex] !== '\t\t</item>';  ++itemEndIndex);
+		itemArr.push({
+			title: lines[itemBegIndex + 1].slice(19, -11), // Filter out \t\t\t<title><![CDATA[ and ]]></title>
+			category: lines[itemBegIndex + 5].slice(22, -14), // Filter out <category><![CDATA[ and ]]></category>
+			pubDate: lines[itemBegIndex + 6].slice(12, -10), // Filter out \t\t\t<pubDate> and </pubDate>
+			description: itemEndIndex === itemBegIndex + 9 ? lines[itemBegIndex + 8].slice(25, -17) : [ // The <description> tag can span multiple lines.
+				lines[itemBegIndex + 8].slice(25), // Filter out \t\t\t<description><![CDATA[
+				...lines.slice(itemBegIndex + 9, itemEndIndex - 1),
+				lines[itemEndIndex - 1].slice(0, -17), // Filter out ]]></description>
+			].join(''),
+		});
+	}
+	for (const item of itemArr) {
+		const tr = document.createElement('tr');
+		['pubDate', 'category', 'title'].forEach(key => {
+			const td = document.createElement('td');
+			td.innerText = item[key];
+			tr.appendChild(td);
+		});
+		menu.appendChild(tr);
+	}
+	showItem(0);
 });
 document.addEventListener('keydown', (e) => {
 	switch (e.key) {
