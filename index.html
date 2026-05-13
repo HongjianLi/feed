@@ -55,11 +55,11 @@ menu.addEventListener('dblclick', async (e) => {
 });
 document.addEventListener('DOMContentLoaded', async () => {
 	if (favorites) {
-		const response = await fetch('http://localhost:12080/feed/favorites.json');
+		const response = await fetch('/feed/favorites.json');
 		console.assert(response.ok);
 		itemArr = await response.json();
 	} else {
-		const response = await fetch('http://localhost:12080');
+		const response = await fetch('/');
 		console.assert(response.ok);
 		const text = await response.text();
 		const lines = text.split('\n').slice(17, -3);
